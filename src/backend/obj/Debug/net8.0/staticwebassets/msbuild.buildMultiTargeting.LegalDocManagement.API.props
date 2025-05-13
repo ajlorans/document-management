@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\LegalDocManagement.API.props" />
+</Project>
