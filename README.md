@@ -25,7 +25,7 @@ This project is a web application designed to streamline the management and appr
 
 - **React (JavaScript/JSX)**: Library for building the user interface.
 - **Vite**: Build tool and development server.
-- **Tailwind CSS (v3)**: Utility-first CSS framework for styling. (Ensuring stable v3 for robust styling)
+- **Tailwind CSS v3**: Utility-first CSS framework for styling. (Downgraded to v3 for stability and to resolve Preflight issues encountered with v4 alpha).
 - **Axios**: For making HTTP requests to the backend API.
 - **React Router DOM**: For client-side routing.
 
@@ -124,9 +124,12 @@ _All endpoints require authentication._
     npm install
     ```
 3.  **Configure API Base URL:**
-    - The backend API URL is configured in `src/frontend/client/src/services/api.js`. Look for the `API_BASE_URL` constant.
-    - Example: `const API_BASE_URL = "http://localhost:5147/api";` (Update port and protocol as per your backend).
-    - _(Alternatively, for more flexible configuration, you can use a `.env` file by uncommenting the `VITE_API_BASE_URL` line in `api.js` and creating a `.env` file in `src/frontend/client/` with `VITE_API_BASE_URL=http://your-backend-url/api`)_
+    - Create a `.env` file in the `src/frontend/client/` directory (if it doesn't already exist).
+    - Add the following line to the `.env` file, adjusting the port if your backend runs on a different one:
+      ```
+      VITE_API_BASE_URL=http://localhost:5147/api
+      ```
+    - The frontend service (`src/frontend/client/src/services/api.js`) is configured to use this environment variable.
 4.  **Run the Frontend:**
     ```bash
     npm run dev
