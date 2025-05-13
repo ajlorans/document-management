@@ -5,21 +5,21 @@ This project is a web application designed to streamline the management and appr
 ## Features
 
 - User registration and authentication (JWT-based).
-- Role-based access control (e.g., Uploader, Admin, various Approver roles).
+- Role-based access control (Admin, Uploader, LegalApprover, ManagerApprover, FinalApprover).
 - Secure document uploading.
 - Multi-step document approval workflows.
-- Ability to view document status and history (implied, to be fully developed).
+- Ability to view document status and history.
 - Approve or reject documents at each stage of the workflow.
 
 ## Tech Stack
 
 ### Backend
 
-- **.NET Core (C#)**: Framework for building the API.
+- **.NET 8.0 (C#)**: Framework for building the API.
 - **ASP.NET Core Identity**: For user authentication and authorization.
 - **Entity Framework Core**: For data access and interaction with the database.
 - **JWT (JSON Web Tokens)**: For secure token-based authentication.
-- **Database**: (Likely SQL Server, a common choice with .NET. Specify your database here if different, e.g., PostgreSQL, SQLite).
+- **Database**: (Likely SQL Server by default with .NET templates. Update if you are using PostgreSQL, SQLite, etc. Configuration is in `appsettings.json`)
 
 ### Frontend
 
@@ -36,7 +36,7 @@ The backend exposes the following RESTful API endpoints:
 ### Account Management (`/api/Account`)
 
 - `POST /register`
-  - **Description**: Registers a new user.
+  - **Description**: Registers a new user. New users are assigned the "Uploader" role by default.
   - **Request Body**: `{ "email": "user@example.com", "password": "Password123!" }`
   - **Response**: Success or error message.
 - `POST /login`
@@ -59,7 +59,7 @@ _All endpoints require authentication._
   - **Description**: Retrieves details of a specific document by its ID.
   - **Response**: Document information object or 404 if not found.
 - `POST /{id}/approve`
-  - **Description**: Approves a document at its current approval step. Requires appropriate approver role for the current step.
+  - **Description**: Approves a document at its current approval step. Requires appropriate approver role for the current step (e.g., "LegalApprover" for legal step).
   - **Response**: Success or error message.
 - `POST /{id}/reject`
   - **Description**: Rejects a document at its current approval step. Requires appropriate approver role for the current step.
@@ -70,10 +70,12 @@ _All endpoints require authentication._
 
 ### Prerequisites
 
-- .NET SDK (specify version, e.g., .NET 8.0 SDK)
-- Node.js and npm (specify versions, e.g., Node.js >= 18.x, npm >= 9.x)
+- **.NET 8.0 SDK**: [Download here](https://dotnet.microsoft.com/download/dotnet/8.0)
+- **Node.js**: Latest LTS version (e.g., v22.x or v20.x) recommended. [Download here](https://nodejs.org/)
+  - npm is included with Node.js.
+- **Git**: For cloning the repository. [Download here](https://git-scm.com/downloads)
 - A relational database compatible with Entity Framework Core (e.g., SQL Server, PostgreSQL, SQLite).
-- (TODO: Add any other specific tools or SDKs required)
+  - SQL Server Express LocalDB is often used for development with .NET on Windows.
 
 ### Backend Setup
 
@@ -83,43 +85,51 @@ _All endpoints require authentication._
     cd document-management/src/backend
     ```
 2.  **Configure Database Connection:**
-    - Open `appsettings.Development.json` (and `appsettings.json` for production).
-    - Update the `ConnectionStrings` section with your database connection details. Example for SQL Server:
+    - Open `appsettings.Development.json` (and `appsettings.json` for production builds).
+    - Update the `ConnectionStrings` section with your database connection details. The default often targets SQL Server LocalDB:
       ```json
       "ConnectionStrings": {
-        "DefaultConnection": "Server=(localdb)\mssqllocaldb;Database=LegalDocManagementDB;Trusted_Connection=True;MultipleActiveResultSets=true"
+        "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=LegalDocManagementDB;Trusted_Connection=True;MultipleActiveResultSets=true"
       }
       ```
-3.  **Apply Migrations:**
-    This will create the database schema based on the Entity Framework Core models.
+    - You can also configure the Admin User credentials here under `AppSettings`:
+      ```json
+      "AppSettings": {
+        "AdminUserEmail": "admin@yourdomain.com",
+        "AdminUserPassword": "YourSecurePassword!"
+      }
+      ```
+3.  **Apply Migrations & Seed Data:**
+    This will create the database schema and seed initial roles and the admin user.
     ```bash
     dotnet ef database update
     ```
     _(Note: If you haven't installed `dotnet-ef` tools yet, run `dotnet tool install --global dotnet-ef` first)._
+    The application will also attempt to seed data on startup if roles/admin are missing.
 4.  **Run the Backend:**
     ```bash
     dotnet run
     ```
-    The API will typically be available at `https://localhost:5001` or `http://localhost:5000`.
+    The API will typically be available at `https://localhost:7260` or a similar port (check console output).
 
 ### Frontend Setup
 
 1.  **Navigate to the client directory:**
     ```bash
-    cd ../frontend/client
+    # Assuming you are in the root of the repository
+    cd src/frontend/client
     ```
-    _(Assuming you are in the `src/backend` directory from the previous step)._
 2.  **Install Dependencies:**
     ```bash
     npm install
     ```
-3.  **Configure API Base URL (if needed):**
-    - The frontend uses `axios` to make API calls. By default, it might assume the API is on the same host/port or a relative path.
-    - Update API call base URLs in `src/frontend/client/src/services/api.js` or create an environment variable (e.g., `VITE_API_BASE_URL` in a `.env` file) if your backend is running on a different URL.
-      Example `.env` file in `src/frontend/client/`:
+3.  **Configure API Base URL:**
+    - Create a `.env` file in the `src/frontend/client/` directory (if it doesn't exist).
+    - Add the backend API URL. For example, if your backend is running on `https://localhost:7260`:
       ```
-      VITE_API_BASE_URL=https://localhost:5001/api
+      VITE_API_BASE_URL=https://localhost:7260/api
       ```
+    - The frontend service files (e.g., `src/services/api.js`) use this environment variable.
 4.  **Run the Frontend:**
     ```bash
     npm run dev
@@ -128,27 +138,44 @@ _All endpoints require authentication._
 
 ## Usage
 
-1.  Open your browser and navigate to the frontend URL (e.g., `http://localhost:5173`).
-2.  **Register** a new user account.
-3.  **Login** with your credentials.
-4.  If your user has the "Uploader" role (the default for new registrations in the current seed data), you can navigate to the upload section and submit a document.
-5.  Users with designated approver roles can then view pending documents and approve or reject them.
-    _(TODO: Detail the exact roles and how they are assigned or seeded if not covered by default registration.)_
+1.  Ensure both backend and frontend applications are running.
+2.  Open your browser and navigate to the frontend URL (e.g., `http://localhost:5173`).
+3.  **Admin Access**: Log in with the admin credentials configured in `appsettings.Development.json` (default: `admin@example.com` / `AdminPa$$w0rd` if not changed).
+4.  **User Registration**: New users can register through the UI. They are automatically assigned the "Uploader" role.
+5.  **Document Upload**: Logged-in users with the "Uploader" or "Admin" role can upload documents via the dashboard.
+6.  **Approval Workflow**:
+    - Uploaded documents enter a workflow based on predefined `ApprovalSteps` (Legal, Manager, Final).
+    - The system expects roles: "LegalApprover", "ManagerApprover", "FinalApprover". Users need to be manually assigned these roles by an Admin through the database or a future user management interface to participate in these specific approval stages.
+    - Users with the appropriate role for the document's current step can approve or reject it.
 
 ## Workflow Overview
 
-1.  **Document Upload**: An "Uploader" submits a document.
-2.  **Initial Status**: The document enters the workflow with an initial status (e.g., "AwaitingLegal").
+1.  **Document Upload**: An "Uploader" or "Admin" submits a document.
+2.  **Initial Status**: The document enters the workflow with an initial status based on the first approval step defined (e.g., "AwaitingLegal" if LegalApprover is the first step).
 3.  **Sequential Approval**:
-    - The document moves through predefined `ApprovalSteps` (e.g., Legal, Manager, Final).
-    - Users with the `RequiredRole` for the current active step can **approve** it.
-    - If approved, the document moves to the next step or becomes "Approved" if it's the final step.
-    - If **rejected**, the document status becomes "Rejected," and the workflow for that document typically ends unless a resubmission process is implemented.
+    - The document moves through predefined `ApprovalSteps` (e.g., Legal, Manager, Final as defined in `SeedData.cs` and potentially configurable in the DB).
+    - Users with the `RequiredRole` for the current active step (e.g., "LegalApprover", "ManagerApprover", "FinalApprover") can **approve** it.
+    - If approved, the document moves to the next step or its status becomes "Approved" if it's the final step.
+    - If **rejected**, the document status becomes "Rejected," and the workflow for that document typically ends there unless a resubmission process is part of further development.
 
 ## Contributing
 
-(TODO: Add instructions on how to contribute to the project. Include guidelines for code style, branching, pull requests, etc.)
+We welcome contributions! Please follow these guidelines:
+
+1.  **Fork the repository.**
+2.  **Create a new branch** for your feature or bug fix: `git checkout -b feature/your-feature-name` or `bugfix/your-bug-fix`.
+3.  **Make your changes.** Adhere to the existing code style.
+    - For .NET, follow common C# coding conventions.
+    - For React/JS, follow common JavaScript/React best practices. Consider using the included ESLint configuration.
+4.  **Test your changes thoroughly.**
+5.  **Commit your changes** with a clear and descriptive commit message: `git commit -m "feat: Implement X feature"` or `fix: Resolve Y bug`.
+6.  **Push to your forked repository:** `git push origin feature/your-feature-name`.
+7.  **Open a Pull Request** to the `main` branch of the original repository.
+    - Provide a clear title and description for your PR.
+    - Link any relevant issues.
 
 ## License
 
-(TODO: Specify the license for your project, e.g., MIT License. If you don't have one, consider adding one like MIT: `LICENSE.md` with the MIT license text.)
+This project is currently unlicensed.
+
+Consider adding an open-source license like the [MIT License](https://opensource.org/licenses/MIT). To do so, create a `LICENSE.md` file in the root of your project and paste the MIT license text into it, replacing `[year]` and `[fullname]` with your details.
