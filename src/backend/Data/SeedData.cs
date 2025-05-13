@@ -1,6 +1,8 @@
 using LegalDocManagement.API.Data.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace LegalDocManagement.API.Data
 {
@@ -10,34 +12,49 @@ namespace LegalDocManagement.API.Data
         {
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = serviceProvider.GetRequiredService<UserManager<AppUser>>();
-            var dbContext = serviceProvider.GetRequiredService<ApplicationDbContext>();
+            // var dbContext = serviceProvider.GetRequiredService<ApplicationDbContext>(); // dbContext not used in current logic, commented out to avoid unused variable warning
+            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>(); // Get ILoggerFactory
+            var logger = loggerFactory.CreateLogger("SeedData"); // Create logger with a category name
 
-            // Ensure database is created and migrations are applied
-            // Note: In a production scenario, migrations are typically handled by deployment scripts.
-            // For development, this ensures the DB is ready.
-            // await dbContext.Database.MigrateAsync(); // We've already done this manually for InitialCreate
+            logger.LogInformation("SeedData.Initialize started.");
 
             // Define roles
             string[] roleNames = { "Admin", "Uploader", "LegalApprover", "ManagerApprover", "FinalApprover" };
+            logger.LogInformation("Ensuring roles exist: {Roles}", string.Join(", ", roleNames));
 
             foreach (var roleName in roleNames)
             {
-                var roleExist = await roleManager.RoleExistsAsync(roleName);
-                if (!roleExist)
+                if (!await roleManager.RoleExistsAsync(roleName))
                 {
-                    // Create the roles and seed them to the database
-                    await roleManager.CreateAsync(new IdentityRole(roleName));
+                    logger.LogInformation("Role '{RoleName}' not found. Creating it.", roleName);
+                    var roleResult = await roleManager.CreateAsync(new IdentityRole(roleName));
+                    if (roleResult.Succeeded)
+                    {
+                        logger.LogInformation("Role '{RoleName}' created successfully.", roleName);
+                    }
+                    else
+                    {
+                        logger.LogError("Error creating role '{RoleName}': {Errors}", roleName, string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+                    }
+                }
+                else
+                {
+                    logger.LogInformation("Role '{RoleName}' already exists.", roleName);
                 }
             }
 
             // Get admin user details from configuration
             var adminEmail = configuration["AppSettings:AdminUserEmail"] ?? "admin@example.com";
-            var adminPassword = configuration["AppSettings:AdminUserPassword"] ?? "AdminPa$$w0rd"; // Store securely!
+            var adminPassword = configuration["AppSettings:AdminUserPassword"] ?? "AdminPa$$w0rd";
+            logger.LogInformation("Admin user email from configuration: {AdminEmail}", adminEmail);
 
             // Check if admin user exists
+            logger.LogInformation("Checking if admin user '{AdminEmail}' exists...", adminEmail);
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
+            
             if (adminUser == null)
             {
+                logger.LogInformation("Admin user '{AdminEmail}' not found. Attempting to create.", adminEmail);
                 var newAdminUser = new AppUser
                 {
                     UserName = adminEmail,
@@ -48,11 +65,57 @@ namespace LegalDocManagement.API.Data
                 var createUserResult = await userManager.CreateAsync(newAdminUser, adminPassword);
                 if (createUserResult.Succeeded)
                 {
-                    // Assign Admin role to the new admin user
-                    await userManager.AddToRoleAsync(newAdminUser, "Admin");
+                    logger.LogInformation("Admin user '{AdminEmail}' created successfully. Assigning Admin role.", adminEmail);
+                    var addToRoleResult = await userManager.AddToRoleAsync(newAdminUser, "Admin");
+                    if (addToRoleResult.Succeeded)
+                    {
+                        logger.LogInformation("Successfully assigned Admin role to '{AdminEmail}'.", adminEmail);
+                    }
+                    else
+                    {
+                        logger.LogError("Error assigning Admin role to '{AdminEmail}': {Errors}", adminEmail, string.Join(", ", addToRoleResult.Errors.Select(e => e.Description)));
+                    }
                 }
-                // Log errors if createUserResult failed (omitted for brevity here)
+                else
+                {
+                    logger.LogError("Error creating admin user '{AdminEmail}': {Errors}", adminEmail, string.Join(", ", createUserResult.Errors.Select(e => e.Description)));
+                }
             }
+            else
+            {
+                logger.LogInformation("Admin user '{AdminEmail}' already exists. Ensuring Admin role assignment and updating password.", adminEmail);
+                if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
+                {
+                    logger.LogInformation("Admin user '{AdminEmail}' exists but does not have Admin role. Assigning Admin role.", adminEmail);
+                    var addToRoleResult = await userManager.AddToRoleAsync(adminUser, "Admin");
+                    if (addToRoleResult.Succeeded)
+                    {
+                        logger.LogInformation("Successfully assigned Admin role to existing user '{AdminEmail}'.", adminEmail);
+                    }
+                    else
+                    {
+                        logger.LogError("Error assigning Admin role to existing user '{AdminEmail}': {Errors}", adminEmail, string.Join(", ", addToRoleResult.Errors.Select(e => e.Description)));
+                    }
+                }
+                else
+                {
+                    logger.LogInformation("Existing admin user '{AdminEmail}' already has Admin role.", adminEmail);
+                }
+
+                logger.LogInformation("Attempting to update password for admin user '{AdminEmail}'.", adminEmail);
+                var token = await userManager.GeneratePasswordResetTokenAsync(adminUser);
+                var resetPasswordResult = await userManager.ResetPasswordAsync(adminUser, token, adminPassword);
+
+                if (resetPasswordResult.Succeeded)
+                {
+                    logger.LogInformation("Successfully updated password for admin user '{AdminEmail}'.", adminEmail);
+                }
+                else
+                {
+                    logger.LogError("Error updating password for admin user '{AdminEmail}': {Errors}", adminEmail, string.Join(", ", resetPasswordResult.Errors.Select(e => e.Description)));
+                }
+            }
+            logger.LogInformation("SeedData.Initialize finished.");
         }
     }
 } 

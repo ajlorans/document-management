@@ -22,12 +22,12 @@ export const register = async (email, password) => {
  */
 export const login = async (email, password) => {
   const response = await api.post("/account/login", { email, password });
-  // Expecting { token: '...', user: { id: '', email: '', roles: [] } }
-  if (response.data && response.data.token && response.data.user) {
+  // Expecting { token: '...', userInfo: { userId: '', email: '', roles: [] } } from backend (camelCase)
+  if (response.data && response.data.token && response.data.userInfo) {
     localStorage.setItem("token", response.data.token);
     // Store user info as a string
-    localStorage.setItem("user", JSON.stringify(response.data.user));
-    return response.data; // Return token and user info
+    localStorage.setItem("user", JSON.stringify(response.data.userInfo));
+    return response.data; // Return full backend response data
   } else {
     // This case should ideally be handled by backend returning non-2xx status
     // which would be caught by the interceptor or component's catch block.

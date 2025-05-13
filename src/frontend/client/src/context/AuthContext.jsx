@@ -48,10 +48,10 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(async (email, password) => {
     try {
       setLoading(true);
-      const data = await apiLogin(email, password);
-      setUser(data.user); // Update user state from successful API response
-      console.log("Login successful, user state updated:", data.user);
-      return data; // Return full response (token, user) to component if needed
+      const data = await apiLogin(email, password); // data is the AuthResponseDto from backend (camelCased)
+      setUser(data.userInfo); // Update user state from response.data.userInfo
+      console.log("Login successful, user state updated:", data.userInfo);
+      return data; // Return full AuthResponseDto to component if needed
     } catch (error) {
       // Error handling is mostly done by interceptor/component
       setUser(null); // Ensure user state is cleared on login failure

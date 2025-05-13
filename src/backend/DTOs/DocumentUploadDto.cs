@@ -10,6 +10,6 @@ namespace LegalDocManagement.API.DTOs
         public IFormFile File { get; set; } = null!; // The actual file being uploaded
 
         // Add other metadata if needed during upload (e.g., description, initial tags)
-        // public string? Description { get; set; }
+        public string? Description { get; set; }
     }
 } 

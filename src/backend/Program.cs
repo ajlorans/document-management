@@ -57,6 +57,20 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Define a specific CORS policy
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      policy =>
+                      {
+                          policy.WithOrigins("http://localhost:5173") // Frontend origin
+                                .AllowAnyHeader()
+                                .AllowAnyMethod();
+                      });
+});
+
 // Important: Ensure AddAuthorization is added if not already present implicitly
 // builder.Services.AddAuthorization(); 
 
@@ -94,9 +108,14 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    // In development, you might want a more permissive CORS policy
+    // or ensure your specific origin policy is correctly applied.
 }
 
 app.UseHttpsRedirection();
+
+// Use CORS - before Authentication and Authorization
+app.UseCors(MyAllowSpecificOrigins);
 
 // 6. Add Authentication Middleware (BEFORE Authorization)
 app.UseAuthentication();

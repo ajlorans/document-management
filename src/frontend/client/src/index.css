@@ -2,7 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* You can add any custom base styles or component layer customizations below */
+.login-card-force-bg {
+  background-color: white !important;
+} /* You can add any custom base styles or component layer customizations below */
 /* For example:
 body {
   font-family: 'Inter', sans-serif; 

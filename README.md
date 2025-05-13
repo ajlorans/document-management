@@ -25,7 +25,7 @@ This project is a web application designed to streamline the management and appr
 
 - **React (JavaScript/JSX)**: Library for building the user interface.
 - **Vite**: Build tool and development server.
-- **Tailwind CSS**: Utility-first CSS framework for styling.
+- **Tailwind CSS (v3)**: Utility-first CSS framework for styling. (Ensuring stable v3 for robust styling)
 - **Axios**: For making HTTP requests to the backend API.
 - **React Router DOM**: For client-side routing.
 
@@ -124,12 +124,9 @@ _All endpoints require authentication._
     npm install
     ```
 3.  **Configure API Base URL:**
-    - Create a `.env` file in the `src/frontend/client/` directory (if it doesn't exist).
-    - Add the backend API URL. For example, if your backend is running on `https://localhost:7260`:
-      ```
-      VITE_API_BASE_URL=https://localhost:7260/api
-      ```
-    - The frontend service files (e.g., `src/services/api.js`) use this environment variable.
+    - The backend API URL is configured in `src/frontend/client/src/services/api.js`. Look for the `API_BASE_URL` constant.
+    - Example: `const API_BASE_URL = "http://localhost:5147/api";` (Update port and protocol as per your backend).
+    - _(Alternatively, for more flexible configuration, you can use a `.env` file by uncommenting the `VITE_API_BASE_URL` line in `api.js` and creating a `.env` file in `src/frontend/client/` with `VITE_API_BASE_URL=http://your-backend-url/api`)_
 4.  **Run the Frontend:**
     ```bash
     npm run dev
@@ -140,10 +137,11 @@ _All endpoints require authentication._
 
 1.  Ensure both backend and frontend applications are running.
 2.  Open your browser and navigate to the frontend URL (e.g., `http://localhost:5173`).
-3.  **Admin Access**: Log in with the admin credentials configured in `appsettings.Development.json` (default: `admin@example.com` / `AdminPa$$w0rd` if not changed).
-4.  **User Registration**: New users can register through the UI. They are automatically assigned the "Uploader" role.
-5.  **Document Upload**: Logged-in users with the "Uploader" or "Admin" role can upload documents via the dashboard.
-6.  **Approval Workflow**:
+3.  **UI Development**: The user interface is actively being enhanced for a more visually appealing experience using Tailwind CSS.
+4.  **Admin Access**: Log in with the admin credentials configured in `appsettings.Development.json` (default: `admin@example.com` / `AdminPa$$w0rd` if not changed).
+5.  **User Registration**: New users can register through the UI. They are automatically assigned the "Uploader" role.
+6.  **Document Upload**: Logged-in users with the "Uploader" or "Admin" role can upload documents via the dashboard.
+7.  **Approval Workflow**:
     - Uploaded documents enter a workflow based on predefined `ApprovalSteps` (Legal, Manager, Final).
     - The system expects roles: "LegalApprover", "ManagerApprover", "FinalApprover". Users need to be manually assigned these roles by an Admin through the database or a future user management interface to participate in these specific approval stages.
     - Users with the appropriate role for the document's current step can approve or reject it.

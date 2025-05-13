@@ -4,7 +4,7 @@ import axios from "axios";
 // Option 1: Use Vite environment variable (requires setup in .env file)
 // const API_BASE_URL = import.meta.env.VITE_API_URL;
 // Option 2: Hardcode for development (make sure port matches your backend launchSettings.json)
-const API_BASE_URL = "https://localhost:7188/api"; // Update port if necessary
+const API_BASE_URL = "http://localhost:5147/api"; // Updated to match actual backend URL
 
 if (!API_BASE_URL) {
   console.error("API_BASE_URL is not defined. Please configure it.");

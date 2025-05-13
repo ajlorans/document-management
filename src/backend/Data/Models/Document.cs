@@ -10,6 +10,9 @@ namespace LegalDocManagement.API.Data.Models
         [StringLength(255)]
         public string FileName { get; set; } = string.Empty;
 
+        [StringLength(1000)] // Allow a longer description
+        public string? Description { get; set; } // Made nullable as it might not always be provided
+
         // Store file path/URL instead of the file itself in the DB
         [Required]
         public string FilePath { get; set; } = string.Empty;
